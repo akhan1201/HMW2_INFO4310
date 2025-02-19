@@ -1,0 +1,6 @@
+#pip install -r requirements.txt in command line to automatically download all at once
+
+
+flask
+gunicorn
+whitenoise
