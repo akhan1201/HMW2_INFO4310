@@ -3,11 +3,12 @@ from whitenoise import WhiteNoise
 
 app = Flask(__name__)
 
-app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", prefix="static/", index_file="index.html", autorefresh=True)
+# Serve static files from the "static" folder
+app.wsgi_app = WhiteNoise(app.wsgi_app, root="static/", prefix="", autorefresh=True)
 
 @app.route('/')
 def serve_home():
     return send_from_directory("static", "index.html")
 
 if __name__ == "__main__":
-    app.run(threaded=True, port=5000)
+    app.run(threaded=True, port=8080)

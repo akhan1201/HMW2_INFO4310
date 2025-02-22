@@ -1,0 +1,48 @@
+/* Body (wizardly theme) */
+body {
+  background-color: #faf7e9;
+  font-family: 'Cinzel', serif;
+  margin: 20px;
+  color: #2f2f2f;
+  text-align: center; 
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+/* Container: side-by-side layout */
+#container {
+  display: flex;
+  align-items: flex-start; 
+  gap: 20px;
+  max-width: 1200px; 
+  margin: 0 auto;   
+}
+
+/* Chart area */
+#chart {
+  width: 700px; 
+  height: 500px; 
+  background-color: #fdfcf7;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* Side panel */
+#side-panel {
+  width: 300px;
+  min-height: 500px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  background: #fff;
+  padding: 15px;
+  box-sizing: border-box;
+  text-align: left; 
+}
+
+#side-panel h2 {
+  margin-top: 0;
+}
