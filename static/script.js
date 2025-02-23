@@ -1,6 +1,5 @@
 console.log("Script loaded...");
 
-// House color map
 const houseColors = {
   "Gryffindor": "#740001",  
   "Slytherin":  "#1A472A",  
@@ -8,8 +7,16 @@ const houseColors = {
   "Hufflepuff": "#FFD800"  
 };
 
-// Current bar track
-let selectedBar = null;
+const bloodOpacity = {
+  'Pure-blood': 1,     
+  'Half-blood': 0.5,   
+  'Pure-blood or half-blood':0.7,
+  'Muggle-born': 0.3,  
+  'Unknown': 0.1       
+};
+
+let selectedRect = null;
+let selectedBubble = null;
 
 /**
  * Unifying blood status strings
@@ -25,183 +32,194 @@ function unifyBloodStatus(str) {
   return str.trim();
 }
 
+
 d3.dsv(";", "data/Characters.csv").then(function(data) {
   console.log("Raw Data Loaded:", data);
 
-  // Filter to the 4 main houses only
   const mainHouses = new Set(["Gryffindor", "Slytherin", "Ravenclaw", "Hufflepuff"]);
   const filteredData = data.filter(d => d.House && mainHouses.has(d.House.trim()));
 
-  // "BloodStatusClean" column for each row
   filteredData.forEach(d => {
     d.BloodStatusClean = unifyBloodStatus(d["Blood status"]);
   });
 
-  // Rolling up data by House
-  const houseMap = d3.rollup(
+  const bloodMap = d3.rollup(
     filteredData,
     v => v.length,
-    d => d.House.trim()
+    row => row.House.trim(),
+    row => row.BloodStatusClean
   );
-  const houseDataArray = Array.from(houseMap, ([House, count]) => ({ House, count }));
-  console.log("Aggregated Data:", houseDataArray);
 
-  // Frame dimensions (matching the golden frame)
-  const frameWidth = 700, frameHeight = 500;
-  const margin = { top: 50, right: 50, bottom: 50, left: 48 };
+  const bloodData = [];
+  bloodMap.forEach((houseMap, house) => {
+    houseMap.forEach((count, bloodStatus) => {
+      bloodData.push({ house, blood: bloodStatus, count });
+    });
+  });
 
-  const width = frameWidth - margin.left - margin.right;
-  const height = frameHeight - margin.top - margin.bottom;
+  const width = 640, height = 370;
+  const quadrantWidth = width / 2;
+  const quadrantHeight = height / 2;
 
-  // Creating SVG container
-  const svg = d3.select("#chart")
-    .append("svg")
-    .attr("width", frameWidth)
-    .attr("height", frameHeight)
-    .style("position", "relative");
+  const housePositions = {
+    Gryffindor: { x: 200, y: 210 },
+    Slytherin: { x: 520, y: 210 },
+    Ravenclaw: { x: 200, y: 395 },
+    Hufflepuff: { x: 520, y: 395 }
+  };
 
+  const sizeScale = d3.scaleSqrt()
+    .domain([0, d3.max(bloodData, d => d.count)])
+    .range([10, 30]);
 
-  // Embed the histogram chart inside the frame
-  const foreignObject = svg.append("foreignObject")
-    .attr("x", margin.left)  // Adjust x positioning inside frame
-    .attr("y", margin.top + 10)   // Adjust y positioning inside frame
-    .attr("width", width)   // Scale down width
-    .attr("height", height)
-    .append("xhtml:div")
-    .style("width", `${width}px`)
-    .style("height", `${height}px`)
-    .style("overflow", "hidden");
-
-  // Create an inner SVG inside the `foreignObject` for the chart
-  const chartSVG = foreignObject.append("svg")
+  const svg = d3.select("#chart").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-  const g = chartSVG.append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-  // X Scale
-  const xScale = d3.scaleBand()
-    .domain(houseDataArray.map(d => d.House))
-    .range([15, width])
-    .padding(0.3);
+  svg.selectAll("rect")
+        .data(Object.keys(housePositions))
+        .enter().append("rect")
+        .attr("x", d => housePositions[d].x - quadrantWidth / 2)
+        .attr("y", d => housePositions[d].y - quadrantHeight / 2)
+        .attr("width", quadrantWidth)
+        .attr("height", quadrantHeight)
+        .attr("fill", d => houseColors[d])
+        .attr("opacity", 1)
+        .on("mouseover", function(event, d) {
+          d3.select(this).transition().duration(200).style("filter", "brightness(1.2)");
+        })
+        .on("mouseout", function(event, d) {
+          d3.select(this).transition().duration(200).style("filter", "none");
+        })
+        
+        .on("click", function(event, d) {
+          if (selectedRect && selectedRect !== this) {
+            d3.select(selectedRect).style("stroke", "none").style("stroke-width", 0);
+          }
+          
+          selectedRect = this;
+          d3.select(this)
+            .style("stroke", "#C69848")
+            .style("stroke-width", 3)
+            .style("filter", "none");
+      
+          const houseMembers = filteredData.filter(row => row.House.trim() === d);
+      
+          const genderMap = d3.rollup(
+            houseMembers,
+            v => v.length,
+            row => row.Gender
+          );
+          const genderData = Array.from(genderMap, ([gender, count]) => ({ gender, count }));
+      
+          const bloodMap = d3.rollup(
+            houseMembers,
+            v => v.length,
+            row => row.BloodStatusClean 
+          );
+          const bloodData = Array.from(bloodMap, ([bStat, count]) => ({ bStat, count }));
+      
+          const speciesMap = d3.rollup(
+            houseMembers,
+            v => v.length,
+            row => row.Species
+          );
+          const speciesData = Array.from(speciesMap, ([spec, count]) => ({ spec, count }));
+      
+          const genderList = genderData.map(g => `${g.gender || "Unknown"}: ${g.count}`).join("<br>");
+          const bloodList = bloodData.map(b => `${b.bStat || "Unknown"}: ${b.count}`).join("<br>");
+          const speciesList = speciesData.map(s => `${s.spec || "Unknown"}: ${s.count}`).join("<br>");
+      
+          const emblems = {
+            "Gryffindor": "images/gryffindor.jpg",
+            "Slytherin":  "images/slytherin.jpg",
+            "Ravenclaw":  "images/ravenclaw.jpg",
+            "Hufflepuff": "images/hufflepuff.jpg"
+          };
+      
+          d3.select("#side-panel").html(`
+            <h2>${d}</h2>
+            <img class="house-image" src="${emblems[d]}" alt="${d} emblem">
+            <p><strong>Total Characters:</strong> ${houseMembers.length}</p>
+      
+            <h3>Gender Breakdown</h3>
+            <p>${genderList}</p>
+      
+            <h3>Blood Status</h3>
+            <p>${bloodList}</p>
+      
+            <h3>Species</h3>
+            <p>${speciesList}</p>
+          `);
+        });
 
-  // Y Scale
-  const maxCount = d3.max(houseDataArray, d => d.count) || 0;
-  const yScale = d3.scaleLinear()
-    .domain([0, maxCount])
-    .nice()
-    .range([height, 0]);
+  const simulation = d3.forceSimulation(bloodData)
+    .force("x", d3.forceX(d => housePositions[d.house].x).strength(0.2))
+    .force("y", d3.forceY(d => housePositions[d.house].y).strength(0.2))
+    .force("collide", d3.forceCollide(d => sizeScale(d.count) + 2))
+    .on("tick", ticked);
 
-  // Axes
-  const xAxis = g.append("g")
-    .attr("transform", `translate(0, ${height})`)
-    .call(d3.axisBottom(xScale));
-
-  const yAxis = g.append("g")
-    .call(d3.axisLeft(yScale));
-
-    xAxis.append("text")
-    .attr("class", "axis-label")
-    .attr("x", width / 2)
-    .attr("y", 35)
-    .attr("fill", "#2f2f2f")
-    .attr("text-anchor", "middle")
-    .style("font-size", "14px")
-    .text("Hogwarts Houses");
-
-  // Y-axis label
-  yAxis.append("text")
-    .attr("class", "axis-label")
-    .attr("transform", "rotate(-90)")
-    .attr("x", -height / 2)
-    .attr("y", -35) 
-    .attr("fill", "#2f2f2f")
-    .attr("text-anchor", "middle")
-    .style("font-size", "14px")
-    .text("Number of Characters");
-
-  // Bars
-  chartSVG.selectAll(".bar")
-    .data(houseDataArray)
-    .enter()
-    .append("rect")
-    .attr("class", "bar")
-    .attr("x", d => xScale(d.House))
-    .attr("y", d => yScale(d.count))
-    .attr("width", xScale.bandwidth())
-    .attr("height", d => height - yScale(d.count))
-    .style("fill", d => houseColors[d.House] || "steelblue")
+  const bubbles = svg.selectAll("circle")
+    .data(bloodData)
+    .enter().append("circle")
+    .attr("r", d => sizeScale(d.count))
+    .attr("fill", d => {
+      switch(d.house) {
+          case "Gryffindor":
+              return "#F2D2D2";  
+          case "Slytherin":
+              return "#A1B3A1";  
+          case "Ravenclaw":
+              return "#BCC6D1";  
+          case "Hufflepuff":
+              return "#705F0E";  
+          default:
+              return "black";  
+      }
+  })
+    .attr("stroke", "#EAEAEA")
+    .attr("opacity", d => bloodOpacity[d.blood])
     .style("cursor", "pointer")
     .on("mouseover", function(event, d) {
-      d3.select(this).transition().duration(200).style("filter", "brightness(1.8)");
+      d3.select(this).transition().duration(200).style("filter", "brightness(1.2)");
     })
     .on("mouseout", function(event, d) {
       d3.select(this).transition().duration(200).style("filter", "none");
     })
     .on("click", function(event, d) {
-      if (selectedBar && selectedBar !== this) {
-        d3.select(selectedBar).style("stroke", "none").style("stroke-width", 0);
+      if (selectedBubble && selectedBubble !== this) {
+        d3.select(selectedBubble).style("stroke", "#EAEAEA").style("stroke-width", 1);  // Reset previous selection
       }
-      selectedBar = this;
+      
+      selectedBubble = this;
       d3.select(this)
-        .style("stroke", "#000")
+        .style("stroke", "#fff")
         .style("stroke-width", 3)
         .style("filter", "none");
-
-      const houseMembers = filteredData.filter(row => row.House.trim() === d.House);
-
-      // Group by Gender
-      const genderMap = d3.rollup(
-        houseMembers,
-        v => v.length,
-        row => row.Gender
-      );
-      const genderData = Array.from(genderMap, ([gender, count]) => ({ gender, count }));
-
-      // Group by Blood Status
-      const bloodMap = d3.rollup(
-        houseMembers,
-        v => v.length,
-        row => row.BloodStatusClean 
-      );
-      const bloodData = Array.from(bloodMap, ([bStat, count]) => ({ bStat, count }));
-
-      // Group by Species
-      const speciesMap = d3.rollup(
-        houseMembers,
-        v => v.length,
-        row => row.Species
-      );
-      const speciesData = Array.from(speciesMap, ([spec, count]) => ({ spec, count }));
-
-      // Convert each breakdown to HTML
-      const genderList = genderData.map(g => `${g.gender || "Unknown"}: ${g.count}`).join("<br>");
-      const bloodList = bloodData.map(b => `${b.bStat || "Unknown"}: ${b.count}`).join("<br>");
-      const speciesList = speciesData.map(s => `${s.spec || "Unknown"}: ${s.count}`).join("<br>");
-
-      const emblems = {
-        "Gryffindor": "images/gryffindor.jpg",
-        "Slytherin":  "images/slytherin.jpg",
-        "Ravenclaw":  "images/ravenclaw.jpg",
-        "Hufflepuff": "images/hufflepuff.jpg"
-      }; 
-
-      // Side-panel Update
+  
+      const houseMembers = filteredData.filter(row => row.BloodStatusClean.trim() === d.blood);  // Assuming d.blood is the category
+  
       d3.select("#side-panel").html(`
-        <h2>${d.House}</h2>
-        <img class="house-image" src="${emblems[d.House]}" alt="${d.House} emblem">
-        <p><strong>Total Characters:</strong> ${d.count}</p>
-
-        <h3>Gender Breakdown</h3>
-        <p>${genderList}</p>
-
-        <h3>Blood Status</h3>
-        <p>${bloodList}</p>
-
-        <h3>Species</h3>
-        <p>${speciesList}</p>
+        <h2>${d.blood}</h2>  <!-- Show the blood status category name -->
+        <p><strong>Total Characters:</strong> ${houseMembers.length}</p>  <!-- Total count of that category -->
       `);
     });
+    
+  function ticked() {
+    bubbles.attr("cx", d => d.x)
+           .attr("cy", d => d.y);
+  }
+
+  svg.selectAll("text")
+    .data(Object.keys(housePositions))
+    .enter().append("text")
+    .attr("x", d => housePositions[d].x)
+    .attr("y", d => housePositions[d].y - 50)
+    .attr("text-anchor", "middle")
+    .style("font-size", "16px")
+    .style("font-weight", "bold")
+    .style("fill", "#FFF")
+    .text(d => d);
 
   //PATRONUS SCRIPTS START HERE: 
   
