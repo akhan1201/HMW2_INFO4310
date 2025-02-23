@@ -46,29 +46,46 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
   const houseDataArray = Array.from(houseMap, ([House, count]) => ({ House, count }));
   console.log("Aggregated Data:", houseDataArray);
 
-  // Dimensions
-  const svgWidth = 600, svgHeight = 500;
-  const margin = { top: 20, right: 20, bottom: 50, left: 60 }; 
+  // Frame dimensions (matching the golden frame)
+  const frameWidth = 700, frameHeight = 500;
+  const margin = { top: 50, right: 50, bottom: 50, left: 48 };
 
-  const width = svgWidth - margin.left - margin.right;
-  const height = svgHeight - margin.top - margin.bottom;
+  const width = frameWidth - margin.left - margin.right;
+  const height = frameHeight - margin.top - margin.bottom;
 
-  // Creating SVG
+  // Creating SVG container
   const svg = d3.select("#chart")
     .append("svg")
-    .attr("width", svgWidth)
-    .attr("height", svgHeight);
+    .attr("width", frameWidth)
+    .attr("height", frameHeight)
+    .style("position", "relative");
 
-  const g = svg.append("g")
+
+  // Embed the histogram chart inside the frame
+  const foreignObject = svg.append("foreignObject")
+    .attr("x", margin.left)  // Adjust x positioning inside frame
+    .attr("y", margin.top + 10)   // Adjust y positioning inside frame
+    .attr("width", width)   // Scale down width
+    .attr("height", height)
+    .append("xhtml:div")
+    .style("width", `${width}px`)
+    .style("height", `${height}px`)
+    .style("overflow", "hidden");
+
+  // Create an inner SVG inside the `foreignObject` for the chart
+  const chartSVG = foreignObject.append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+  const g = chartSVG.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  // X scale
+  // X Scale
   const xScale = d3.scaleBand()
     .domain(houseDataArray.map(d => d.House))
-    .range([0, width])
+    .range([15, width])
     .padding(0.3);
 
-  // Y scale
+  // Y Scale
   const maxCount = d3.max(houseDataArray, d => d.count) || 0;
   const yScale = d3.scaleLinear()
     .domain([0, maxCount])
@@ -83,9 +100,7 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
   const yAxis = g.append("g")
     .call(d3.axisLeft(yScale));
 
-  // Axis Labels
-  // X-axis label
-  xAxis.append("text")
+    xAxis.append("text")
     .attr("class", "axis-label")
     .attr("x", width / 2)
     .attr("y", 35)
@@ -99,14 +114,14 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
     .attr("class", "axis-label")
     .attr("transform", "rotate(-90)")
     .attr("x", -height / 2)
-    .attr("y", -45) 
+    .attr("y", -35) 
     .attr("fill", "#2f2f2f")
     .attr("text-anchor", "middle")
     .style("font-size", "14px")
     .text("Number of Characters");
 
-  // 11) Bars
-  const bars = g.selectAll(".bar")
+  // Bars
+  chartSVG.selectAll(".bar")
     .data(houseDataArray)
     .enter()
     .append("rect")
@@ -116,37 +131,23 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
     .attr("width", xScale.bandwidth())
     .attr("height", d => height - yScale(d.count))
     .style("fill", d => houseColors[d.House] || "steelblue")
-    .style("cursor", "pointer") // pointer on hover
-    .style("stroke-width", 0) 
+    .style("cursor", "pointer")
     .on("mouseover", function(event, d) {
-      // Lighten color on hover
-      d3.select(this)
-        .transition()
-        .duration(200)
-        .style("filter", "brightness(1.2)");
+      d3.select(this).transition().duration(200).style("filter", "brightness(1.8)");
     })
     .on("mouseout", function(event, d) {
-      // Return to original color if not chosen
-      d3.select(this)
-        .transition()
-        .duration(200)
-        .style("filter", "none");
+      d3.select(this).transition().duration(200).style("filter", "none");
     })
     .on("click", function(event, d) {
-      // Reset stroke
       if (selectedBar && selectedBar !== this) {
-        d3.select(selectedBar)
-          .style("stroke", "none")
-          .style("stroke-width", 0);
+        d3.select(selectedBar).style("stroke", "none").style("stroke-width", 0);
       }
-      // Mark bar and give golden glow
       selectedBar = this;
       d3.select(this)
-        .style("stroke", "#FFD700")
+        .style("stroke", "#000")
         .style("stroke-width", 3)
-        .style("filter", "none"); 
+        .style("filter", "none");
 
-      // Gather rows for the clicked House
       const houseMembers = filteredData.filter(row => row.House.trim() === d.House);
 
       // Group by Gender
@@ -157,7 +158,7 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
       );
       const genderData = Array.from(genderMap, ([gender, count]) => ({ gender, count }));
 
-      // Group by our cleaned Blood Status
+      // Group by Blood Status
       const bloodMap = d3.rollup(
         houseMembers,
         v => v.length,
@@ -173,14 +174,22 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
       );
       const speciesData = Array.from(speciesMap, ([spec, count]) => ({ spec, count }));
 
-      // Converting each breakdown to HTML
+      // Convert each breakdown to HTML
       const genderList = genderData.map(g => `${g.gender || "Unknown"}: ${g.count}`).join("<br>");
       const bloodList = bloodData.map(b => `${b.bStat || "Unknown"}: ${b.count}`).join("<br>");
       const speciesList = speciesData.map(s => `${s.spec || "Unknown"}: ${s.count}`).join("<br>");
 
-      // Side-panel
+      const emblems = {
+        "Gryffindor": "images/gryffindor.jpg",
+        "Slytherin":  "images/slytherin.jpg",
+        "Ravenclaw":  "images/ravenclaw.jpg",
+        "Hufflepuff": "images/hufflepuff.jpg"
+      }; 
+
+      // Side-panel Update
       d3.select("#side-panel").html(`
         <h2>${d.House}</h2>
+        <img class="house-image" src="${emblems[d.House]}" alt="${d.House} emblem">
         <p><strong>Total Characters:</strong> ${d.count}</p>
 
         <h3>Gender Breakdown</h3>
@@ -194,6 +203,45 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
       `);
     });
 
+  //PATRONUS SCRIPTS START HERE: 
+  
+  // patronuses (need to fill based on ones listed in dataset)
+const patronuses = {
+  "Stag": "images/stag.png", //image source: https://stock.adobe.com/search/images?filters%5Bcontent_type%3Aphoto%5D=1&filters%5Bcontent_type%3Aillustration%5D=1&filters%5Bcontent_type%3Azip_vector%5D=1&filters%5Bcontent_type%3Aimage%5D=1&k=patronus&order=relevance&price%5B%24%5D=1&limit=100&search_page=1&search_type=usertyped&acp=&aco=patronus&get_facets=0&asset_id=1090897075
+  "Horse": "images/horse.png", //image source: https://stock.adobe.com/search/images?filters%5Bcontent_type%3Aphoto%5D=1&filters%5Bcontent_type%3Aillustration%5D=1&filters%5Bcontent_type%3Azip_vector%5D=1&filters%5Bcontent_type%3Aimage%5D=1&order=relevance&price%5B%24%5D=1&limit=100&search_page=1&search_type=usertyped&acp=&aco=horse+patronus&k=horse+patronus&get_facets=0&asset_id=572394226
+};
+
+//this functions just assigns a random patronus based on the user's input (we can modify it to be based on most common patronuses per house instead of name?)
+function getRandomPatronus(name) {
+  const patronusNames = Object.keys(patronuses);
+  const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return patronusNames[hash % patronusNames.length];
+}
+
+//textbox for the patronus feature
+document.getElementById("patronus-btn").addEventListener("click", function() {
+  const name = document.getElementById("wizard-name").value.trim();
+  
+  if (name === "") {
+      document.getElementById("patronus-result").innerHTML = "Please enter your name!";
+      return;
+  }
+
+  const patronus = getRandomPatronus(name);
+  document.getElementById("patronus-result").innerHTML = `✨ Your Patronus is a <strong>${patronus}</strong>!`;
+
+  //based on the result of the random functiont, we then output one of our stored patronus images
+  const imgElement = document.getElementById("patronus-image");
+  imgElement.src = patronuses[patronus];
+  imgElement.style.display = "block";
+
+  // Add magical glow effect
+  imgElement.classList.add("glow-effect"); //inspired by the code taken from here: https://codepen.io/pugson/pen/eYNXvyN
+
+
+});
+
 }).catch(function(error) {
   console.error("Error loading or processing data:", error);
 });
+

@@ -1,10 +1,11 @@
-/* Body (wizardly theme) */
+/* Body  */
 body {
-  background-color: #faf7e9;
+  background: white;
   font-family: 'Cinzel', serif;
   margin: 20px;
   color: #2f2f2f;
   text-align: center; 
+  cursor: url("images/cursor.cur"), auto; /* Image Source: <a href="https://www.flaticon.com/free-icons/wand" title="wand icons">Wand icons created by Freepik - Flaticon</a> */ 
 }
 
 h1 {
@@ -22,13 +23,31 @@ h1 {
 
 /* Chart area */
 #chart {
-  width: 700px; 
-  height: 500px; 
-  background-color: #fdfcf7;
-  border: 2px solid #ccc;
-  border-radius: 8px;
-  padding: 10px;
-  box-sizing: border-box;
+  width: 910px;  
+  height: 760px;
+  position: relative;
+  background: url("images/frame.jpg") no-repeat center; /* Image source: https://stock.adobe.com/search/images?filters%5Bcontent_type%3Aphoto%5D=1&filters%5Bcontent_type%3Aillustration%5D=1&filters%5Bcontent_type%3Azip_vector%5D=1&filters%5Bcontent_type%3Aimage%5D=1&k=frame&order=relevance&price%5B%24%5D=1&limit=100&search_page=1&search_type=usertyped&acp=&aco=frame&get_facets=0&asset_id=284921759 */
+  background-size: contain;
+  background-position: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px; /* Ensure padding to fit chart inside */
+}
+
+/* Keep the Chart Inside the Frame */
+#chart svg {
+  width: 750px; 
+  height: 670px;
+  margin-top: 60px;
+  margin-left: 20px;
+
+}
+
+/* Prevent Overflow */
+#chart svg foreignObject {
+  height: 700px;
+  width: 900px;
 }
 
 /* Side panel */
@@ -45,4 +64,70 @@ h1 {
 
 #side-panel h2 {
   margin-top: 0;
+}
+
+.house-image {
+  max-width: 100px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* PATRONUS STUFF */
+
+#patronus-quiz {
+  background: white;
+  color: black;
+  padding: 20px;
+  text-align: center;
+  width: 400px;
+  margin: auto;
+  font-family: 'Cinzel', serif;
+}
+
+#patronus-quiz h2 {
+  color: black;
+}
+
+input {
+  padding: 8px;
+  font-size: 16px;
+  border: 2px solid gold;
+  border-radius: 5px;
+  width: 80%;
+  text-align: center;
+}
+
+button {
+  background: gold;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  margin-top: 10px;
+  font-size: 16px;
+  border-radius: 5px;
+}
+
+button:hover {
+  background: white;
+  color: black;
+}
+
+#patronus-result {
+  font-size: 18px;
+  margin-top: 10px;
+  font-weight: bold;
+  text-shadow: 2px 2px 5px rgba(54, 151, 189, 0.8);
+}
+
+#patronus-image {
+  width: 150px;
+  height: auto;
+  margin-top: 15px;
+  display: none;
+  filter: drop-shadow(0px 0px 15px rgba(54, 151, 189, 0.8));
+}
+
+/* Glow effect */
+.glow-effect {
+  animation: glow 1.5s ease-in-out infinite alternate;
 }
