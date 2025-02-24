@@ -12,7 +12,10 @@ const bloodOpacity = {
   'Half-blood': 0.5,   
   'Pure-blood or half-blood':0.7,
   'Muggle-born': 0.3,  
-  'Unknown': 0.1       
+  'Unknown': 0.1,    
+  'Part-Human (Half-giant)': 1,
+  'Part-Goblin': 1,
+  'Muggle-born or half-blood[': 1
 };
 
 let selectedRect = null;
@@ -159,6 +162,8 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
     .force("collide", d3.forceCollide(d => sizeScale(d.count) + 2))
     .on("tick", ticked);
 
+  const bubbleColorScale = d3.scaleOrdinal(d3.schemeDark2);
+
   const bubbles = svg.selectAll("circle")
     .data(bloodData)
     .enter().append("circle")
@@ -178,7 +183,7 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
       }
   })
     .attr("stroke", "#EAEAEA")
-    .attr("opacity", d => bloodOpacity[d.blood])
+    .attr("fill", d => bubbleColorScale(d.blood))
     .style("cursor", "pointer")
     .on("mouseover", function(event, d) {
       d3.select(this).transition().duration(200).style("filter", "brightness(1.2)");
@@ -258,6 +263,39 @@ document.getElementById("patronus-btn").addEventListener("click", function() {
 
 
 });
+
+// legend making
+
+const legend_svg = d3.select("#colorLegend");
+
+const blood_names = Object.keys(bloodOpacity);
+const legend_xy = 15; 
+const legend_spacing = 30; 
+const radius = 10; 
+
+const legend = legend_svg.selectAll(".legend")
+  .data(blood_names)
+  .enter()
+  .append("g")
+  .attr("class", "legend")
+  .attr("transform", (d, i) => `translate(${legend_xy}, ${legend_xy+i*legend_spacing})`);
+
+legend.append("circle")
+  .attr("r", radius)
+  .attr("cx", 10)
+  .attr("cy", 10)
+  .attr("fill", d => bubbleColorScale(d))
+  .attr("stroke", "#EAEAEA")
+  .attr("stroke-width", 1);
+
+legend.append("text")
+  .attr("x", 25)
+  .attr("y", 14.65)
+  .attr("font-size", "12px")
+  .attr("fill", "black")
+  .text(d => d); 
+
+
 
 }).catch(function(error) {
   console.error("Error loading or processing data:", error);
