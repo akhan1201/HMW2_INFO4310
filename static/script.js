@@ -226,44 +226,6 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
     .style("fill", "#FFF")
     .text(d => d);
 
-  //PATRONUS SCRIPTS START HERE: 
-  
-  // patronuses (need to fill based on ones listed in dataset)
-const patronuses = {
-  "Stag": "images/stag.png", //image source: https://stock.adobe.com/search/images?filters%5Bcontent_type%3Aphoto%5D=1&filters%5Bcontent_type%3Aillustration%5D=1&filters%5Bcontent_type%3Azip_vector%5D=1&filters%5Bcontent_type%3Aimage%5D=1&k=patronus&order=relevance&price%5B%24%5D=1&limit=100&search_page=1&search_type=usertyped&acp=&aco=patronus&get_facets=0&asset_id=1090897075
-  "Horse": "images/horse.png", //image source: https://stock.adobe.com/search/images?filters%5Bcontent_type%3Aphoto%5D=1&filters%5Bcontent_type%3Aillustration%5D=1&filters%5Bcontent_type%3Azip_vector%5D=1&filters%5Bcontent_type%3Aimage%5D=1&order=relevance&price%5B%24%5D=1&limit=100&search_page=1&search_type=usertyped&acp=&aco=horse+patronus&k=horse+patronus&get_facets=0&asset_id=572394226
-};
-
-//this functions just assigns a random patronus based on the user's input (we can modify it to be based on most common patronuses per house instead of name?)
-function getRandomPatronus(name) {
-  const patronusNames = Object.keys(patronuses);
-  const hash = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return patronusNames[hash % patronusNames.length];
-}
-
-//textbox for the patronus feature
-document.getElementById("patronus-btn").addEventListener("click", function() {
-  const name = document.getElementById("wizard-name").value.trim();
-  
-  if (name === "") {
-      document.getElementById("patronus-result").innerHTML = "Please enter your name!";
-      return;
-  }
-
-  const patronus = getRandomPatronus(name);
-  document.getElementById("patronus-result").innerHTML = `✨ Your Patronus is a <strong>${patronus}</strong>!`;
-
-  //based on the result of the random functiont, we then output one of our stored patronus images
-  const imgElement = document.getElementById("patronus-image");
-  imgElement.src = patronuses[patronus];
-  imgElement.style.display = "block";
-
-  // Add magical glow effect
-  imgElement.classList.add("glow-effect"); //inspired by the code taken from here: https://codepen.io/pugson/pen/eYNXvyN
-
-
-});
-
 // legend making
 
 const legend_svg = d3.select("#colorLegend");
