@@ -4,7 +4,7 @@ const houseColors = {
   "Gryffindor": "#740001",  
   "Slytherin":  "#1A472A",  
   "Ravenclaw":  "#0E1A40", 
-  "Hufflepuff": "#FFD800"  
+  "Hufflepuff" : "#CCAA00" 
 };
 
 const bloodOpacity = {
@@ -15,7 +15,7 @@ const bloodOpacity = {
   'Unknown': 0.1,    
   'Part-Human (Half-giant)': 1,
   'Part-Goblin': 1,
-  'Muggle-born or half-blood[': 1
+  'Muggle-born or half-blood': 1
 };
 
 let selectedRect = null;
@@ -184,7 +184,6 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
   })
     .attr("stroke", "#EAEAEA")
     .attr("fill", d => bubbleColorScale(d.blood))
-    .style("cursor", "pointer")
     .on("mouseover", function(event, d) {
       d3.select(this).transition().duration(200).style("filter", "brightness(1.2)");
     })
@@ -215,48 +214,40 @@ d3.dsv(";", "data/Characters.csv").then(function(data) {
            .attr("cy", d => d.y);
   }
 
-  svg.selectAll("text")
-    .data(Object.keys(housePositions))
-    .enter().append("text")
-    .attr("x", d => housePositions[d].x)
-    .attr("y", d => housePositions[d].y - 50)
-    .attr("text-anchor", "middle")
-    .style("font-size", "16px")
-    .style("font-weight", "bold")
-    .style("fill", "#FFF")
-    .text(d => d);
+svg.selectAll("text.house-label")
+  .data(Object.keys(housePositions))
+  .enter().append("text")
+  .attr("class", "house-label")
+  .attr("x", d => housePositions[d].x - quadrantWidth / 2 + 5) //moving label to be on the left top
+  .attr("y", d => housePositions[d].y - quadrantHeight / 2 + 15)
+  .attr("dy", "5px")
+  .attr("text-anchor", "start")
+  .style("font-size", "20px") //making font big for better contrast
+  .style("font-weight", "bold")
+  .style("fill", "#FFF")
+  .text(d => d);
 
 // legend making
 
-const legend_svg = d3.select("#colorLegend");
+const legendData = Object.keys(bloodOpacity);
 
-const blood_names = Object.keys(bloodOpacity);
-const legend_xy = 15; 
-const legend_spacing = 30; 
-const radius = 10; 
-
-const legend = legend_svg.selectAll(".legend")
-  .data(blood_names)
+// binding the legend div to the legend data
+const legendSelection = d3.select("#legend")
+  .selectAll(".legend-item")
+  .data(legendData)
   .enter()
-  .append("g")
-  .attr("class", "legend")
-  .attr("transform", (d, i) => `translate(${legend_xy}, ${legend_xy+i*legend_spacing})`);
+  .append("div")
+  .attr("class", "legend-item");
 
-legend.append("circle")
-  .attr("r", radius)
-  .attr("cx", 10)
-  .attr("cy", 10)
-  .attr("fill", d => bubbleColorScale(d))
-  .attr("stroke", "#EAEAEA")
-  .attr("stroke-width", 1);
+//making small circles for the legend to match those in the visualization
+legendSelection.append("div")
+  .attr("class", "legend-circle")
+  .style("background", d => bubbleColorScale(d));
 
-legend.append("text")
-  .attr("x", 25)
-  .attr("y", 14.65)
-  .attr("font-size", "12px")
-  .attr("fill", "black")
-  .text(d => d); 
-
+//adding labels to each of the circlesss
+legendSelection.append("div")
+  .attr("class", "legend-label")
+  .text(d => d);
 
 
 }).catch(function(error) {

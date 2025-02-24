@@ -12,7 +12,6 @@ h1 {
   margin-bottom: 20px;
 }
 
-/* Container: side-by-side layout */
 #container {
   display: flex;
   align-items: flex-start; 
@@ -21,7 +20,7 @@ h1 {
   margin: 0 auto;   
 }
 
-/* Chart area */
+/* CHART AREA */
 #chart {
   width: 910px;  
   height: 600px;
@@ -32,10 +31,10 @@ h1 {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px; /* Ensure padding to fit chart inside */
+  padding: 20px; 
 }
 
-/* Keep the Chart Inside the Frame */
+/* dont fiddle cause we need to keep frame around chart */
 #chart svg {
   width: 750px; 
   height: 670px;
@@ -44,13 +43,13 @@ h1 {
 
 }
 
-/* Prevent Overflow */
+/* no overflow - its cancelled*/
 #chart svg foreignObject {
   height: 700px;
   width: 900px;
 }
 
-/* Side panel */
+/* lovely side panel */
 #side-panel {
   width: 300px;
   min-height: 500px;
@@ -73,7 +72,28 @@ h1 {
 }
 
 
-/* Color Legend */
-#colorLegend {
-  position: relative;
+/* MAKING LEGEND */
+
+#legend {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px;
+  background: white; 
+  border: 2px solid #ccc;
+  margin-bottom: 20px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  margin: 0 10px;
+}
+
+.legend-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-right: 5px;
 }
